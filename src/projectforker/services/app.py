@@ -1,7 +1,5 @@
-import json
-
 import requests as requests
-from fastapi import FastAPI, Form, Depends, Response, status
+from fastapi import FastAPI, Form, Depends, Response, status, HTTPException
 from fastapi.security import HTTPBearer
 
 from projectforker.models.RepoParameters import RepoParameters
@@ -36,10 +34,10 @@ class MockDB:
 
     def authenticate(self, username: str, password: str):
         if username not in self._username_and_password_dict:
-            raise Exception("Invalid username cannot authenticate")
+            raise HTTPException(status_code=401, detail="Invalid username cannot authenticate")
         else:
             if password != self._username_and_password_dict[username]:
-                raise Exception("Wrong password cannot authenticate")
+                raise HTTPException(status_code=401, detail="Wrong password cannot authenticate")
             else:
                 return True
 
@@ -60,7 +58,7 @@ async def root():
 
 
 @app.post("/login")
-async def login(username: str = Form(), password: str = Form(), db=Depends(mock_db)):
+async def login(response: Response, username: str = Form(), password: str = Form(), db=Depends(mock_db)):
     """
     Login using a username and password. If username and password are correct it returns a jwt. The jwt is used to authenticate into github and create a fork. JWTS are not created by github.
     This jwt is fake and doesn't work.
